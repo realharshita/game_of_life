@@ -22,6 +22,9 @@ running = False
 drawing_mode = False
 speed = 100
 
+generation_count = 0
+live_cells_count = 0
+
 def render_grid():
     canvas.delete("all")
     for y in range(GRID_HEIGHT):
@@ -42,8 +45,11 @@ def count_live_neighbors(y, x):
     return count
 
 def update_simulation():
-    global running
+    global running, generation_count, live_cells_count
     if running:
+        generation_count += 1
+        live_cells_count = sum(sum(row) for row in board)
+
         for y in range(GRID_HEIGHT):
             for x in range(GRID_WIDTH):
                 neighbors = count_live_neighbors(y, x)
@@ -64,6 +70,10 @@ def update_simulation():
 
         render_grid()
         root.after(speed, update_simulation)
+        update_statistics()
+
+def update_statistics():
+    stats_label.config(text=f"Generation: {generation_count} | Live Cells: {live_cells_count}")
 
 def add_cell(event):
     x = event.x // CELL_SIZE
@@ -90,23 +100,26 @@ def erase_cell(event):
         y = event.y // CELL_SIZE
         board[y][x] = 0
         render_grid()
-
 def start_game():
     global running
     running = True
-    status_label.config(text="Running", fg="red")
+    stats_label.config(text="Running", fg="red")
     update_simulation()
 
 def stop_game():
     global running
     running = False
-    status_label.config(text="Stopped", fg="red")
+    stats_label.config(text="Stopped", fg="red")
+
 
 def clear_board():
-    global board, next_board
+    global board, next_board, generation_count, live_cells_count
     board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
     next_board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+    generation_count = 0
+    live_cells_count = 0
     render_grid()
+    update_statistics()
 
 def set_simulation_speed(val):
     global speed
@@ -127,18 +140,21 @@ def load_board():
                 for x in range(GRID_WIDTH):
                     board[y][x] = loaded_board[y][x]
             render_grid()
+            update_statistics()
 
 def randomize_board():
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             board[y][x] = random.choice([0, 1])
     render_grid()
+    update_statistics()
 
 def load_pattern(pattern):
     clear_board()
     for (x, y) in pattern:
         board[y][x] = 1
     render_grid()
+    update_statistics()
 
 def load_glider():
     glider = [(1, 0), (2, 1), (0, 2), (1, 2), (2, 2)]
@@ -229,26 +245,38 @@ help_menu.add_command(label="Instructions", command=show_help)
 controls_frame = tk.Frame(root, bg="black")
 controls_frame.pack()
 
-start_button = tk.Button(controls_frame, text="Start", command=start_game, bg="black", fg="red")
+start_button = tk.Button(controls_frame, text="Start Simulation", command=start_game, bg="black", fg="red", padx=10, pady=5)
 start_button.grid(row=0, column=0, padx=5, pady=10)
+start_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
-stop_button = tk.Button(controls_frame, text="Stop", command=stop_game, bg="black", fg="red")
+stop_button = tk.Button(controls_frame, text="Stop Simulation", command=stop_game, bg="black", fg="red", padx=10, pady=5)
 stop_button.grid(row=0, column=1, padx=5, pady=10)
+stop_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
-clear_button = tk.Button(controls_frame, text="Clear", command=clear_board, bg="black", fg="red")
+clear_button = tk.Button(controls_frame, text="Clear Grid", command=clear_board, bg="black", fg="red", padx=10, pady=5)
 clear_button.grid(row=0, column=2, padx=5, pady=10)
+clear_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
-draw_button = tk.Button(controls_frame, text="Drawing Mode: OFF", command=toggle_drawing_mode, bg="black", fg="red")
+draw_button = tk.Button(controls_frame, text="Drawing Mode: OFF", command=toggle_drawing_mode, bg="black", fg="red", padx=10, pady=5)
 draw_button.grid(row=0, column=3, padx=5, pady=10)
+draw_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
-speed_scale = tk.Scale(controls_frame, from_=1, to=200, orient=tk.HORIZONTAL, label="Speed", bg="black", fg="red", command=set_simulation_speed)
+speed_scale = tk.Scale(controls_frame, from_=1, to=200, orient=tk.HORIZONTAL, label="Simulation Speed", bg="black", fg="red", command=set_simulation_speed)
 speed_scale.set(speed)
 speed_scale.grid(row=0, column=4, padx=5, pady=10)
+speed_scale.config(troughcolor="gray")
 
-status_label = tk.Label(controls_frame, text="Stopped", bg="black", fg="red")
-status_label.grid(row=0, column=5, padx=5, pady=10)
-
-randomize_button = tk.Button(controls_frame, text="Randomize", command=randomize_board, bg="black", fg="red")
+randomize_button = tk.Button(controls_frame, text="Randomize Grid", command=randomize_board, bg="black", fg="red", padx=10, pady=5)
 randomize_button.grid(row=0, column=6, padx=5, pady=10)
+randomize_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
+
+status_bar = tk.Label(root, text="Welcome to Conway's Game of Life!", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+def update_status_bar(message):
+    status_bar.config(text=message)
+
+stats_label = tk.Label(controls_frame, text="Generation: 0 | Live Cells: 0", bg="black", fg="red")
+stats_label.grid(row=0, column=7, padx=5, pady=10)
 
 root.mainloop()
