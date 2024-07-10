@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import json
 import random
 
@@ -17,6 +17,7 @@ board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 next_board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
 running = False
+drawing_mode = False
 speed = 100
 
 def render_grid():
@@ -67,6 +68,13 @@ def toggle_cell_state(event):
     y = event.y // CELL_SIZE
     board[y][x] = 1 - board[y][x]
     render_grid()
+
+def draw_cell(event):
+    if drawing_mode:
+        x = event.x // CELL_SIZE
+        y = event.y // CELL_SIZE
+        board[y][x] = 1
+        render_grid()
 
 def start_game():
     global running
@@ -146,7 +154,33 @@ def load_gosper_glider_gun():
                          (10, 8), (16, 8), (24, 8), (11, 9), (15, 9), (12, 10), (13, 10)]
     load_pattern(gosper_glider_gun)
 
+def toggle_drawing_mode():
+    global drawing_mode
+    drawing_mode = not drawing_mode
+    if drawing_mode:
+        draw_button.config(text="Drawing Mode: ON")
+    else:
+        draw_button.config(text="Drawing Mode: OFF")
+
+def show_help():
+    help_text = (
+        "Conway's Game of Life Instructions:\n\n"
+        "- Click on cells to toggle them on/off.\n"
+        "- Drag with the mouse to draw cells in drawing mode.\n"
+        "- Use the Start button to start the simulation.\n"
+        "- Use the Stop button to stop the simulation.\n"
+        "- Use the Clear button to clear the grid.\n"
+        "- Use the Save button to save the current grid to a file.\n"
+        "- Use the Load button to load a grid from a file.\n"
+        "- Use the Randomize button to randomize the grid.\n"
+        "- Use the pattern buttons to load predefined patterns.\n"
+        "- Adjust the simulation speed with the speed slider.\n"
+        "- Toggle drawing mode with the Drawing Mode button."
+    )
+    messagebox.showinfo("Help", help_text)
+
 canvas.bind("<Button-1>", toggle_cell_state)
+canvas.bind("<B1-Motion>", draw_cell)
 
 render_grid()
 
@@ -186,14 +220,20 @@ lw_spaceship_button.grid(row=0, column=9)
 tumbler_button = tk.Button(button_frame, text="Tumbler", command=load_tumbler)
 tumbler_button.grid(row=0, column=10)
 
-gosper_glider_gun_button = tk.Button(button_frame, text="Gosper Glider Gun", command=load_gosper_glider_gun)
-gosper_glider_gun_button.grid(row=0, column=11)
+gosper_gun_button = tk.Button(button_frame, text="Gosper Glider Gun", command=load_gosper_glider_gun)
+gosper_gun_button.grid(row=0, column=11)
 
-speed_slider = tk.Scale(button_frame, from_=10, to=1000, orient="horizontal", label="Speed (ms)", command=set_simulation_speed)
-speed_slider.set(speed)
-speed_slider.grid(row=1, column=0, columnspan=6)
+draw_button = tk.Button(button_frame, text="Drawing Mode: OFF", command=toggle_drawing_mode)
+draw_button.grid(row=1, column=0, columnspan=6)
+
+help_button = tk.Button(button_frame, text="Help", command=show_help)
+help_button.grid(row=1, column=7)
 
 status_label = tk.Label(root, text="Stopped", bd=1, relief=tk.SUNKEN, anchor=tk.W)
 status_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+speed_scale = tk.Scale(root, from_=10, to=1000, orient=tk.HORIZONTAL, label="Speed (ms)", command=set_simulation_speed)
+speed_scale.pack()
+speed_scale.set(speed)
 
 root.mainloop()
