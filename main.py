@@ -10,8 +10,10 @@ CELL_SIZE = 15
 root = tk.Tk()
 root.title("Conway's Game of Life")
 
-canvas = tk.Canvas(root, width=GRID_WIDTH * CELL_SIZE, height=GRID_HEIGHT * CELL_SIZE, borderwidth=0, highlightthickness=0)
-canvas.pack()
+root.configure(bg="black")
+
+canvas = tk.Canvas(root, width=GRID_WIDTH * CELL_SIZE, height=GRID_HEIGHT * CELL_SIZE, borderwidth=0, highlightthickness=0, bg="black")
+canvas.pack(pady=20)
 
 board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 next_board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
@@ -24,7 +26,7 @@ def render_grid():
     canvas.delete("all")
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            cell_color = "black" if board[y][x] else "white"
+            cell_color = "red" if board[y][x] else "black"
             canvas.create_rectangle(x * CELL_SIZE, y * CELL_SIZE,
                                     (x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE,
                                     fill=cell_color, outline="gray")
@@ -63,29 +65,42 @@ def update_simulation():
         render_grid()
         root.after(speed, update_simulation)
 
-def toggle_cell_state(event):
+def add_cell(event):
     x = event.x // CELL_SIZE
     y = event.y // CELL_SIZE
-    board[y][x] = 1 - board[y][x]
+    board[y][x] = 1
+    render_grid()
+
+def remove_cell(event):
+    x = event.x // CELL_SIZE
+    y = event.y // CELL_SIZE
+    board[y][x] = 0
     render_grid()
 
 def draw_cell(event):
-    if drawing_mode:
+    if drawing_mode and event.num == 1:  # Left click
         x = event.x // CELL_SIZE
         y = event.y // CELL_SIZE
         board[y][x] = 1
         render_grid()
 
+def erase_cell(event):
+    if drawing_mode and event.num == 3:  # Right click
+        x = event.x // CELL_SIZE
+        y = event.y // CELL_SIZE
+        board[y][x] = 0
+        render_grid()
+
 def start_game():
     global running
     running = True
-    status_label.config(text="Running")
+    status_label.config(text="Running", fg="red")
     update_simulation()
 
 def stop_game():
     global running
     running = False
-    status_label.config(text="Stopped")
+    status_label.config(text="Stopped", fg="red")
 
 def clear_board():
     global board, next_board
@@ -158,15 +173,17 @@ def toggle_drawing_mode():
     global drawing_mode
     drawing_mode = not drawing_mode
     if drawing_mode:
-        draw_button.config(text="Drawing Mode: ON")
+        draw_button.config(text="Drawing Mode: ON", bg="red", fg="black")
     else:
-        draw_button.config(text="Drawing Mode: OFF")
+        draw_button.config(text="Drawing Mode: OFF", bg="black", fg="red")
 
 def show_help():
     help_text = (
         "Conway's Game of Life Instructions:\n\n"
-        "- Click on cells to toggle them on/off.\n"
-        "- Drag with the mouse to draw cells in drawing mode.\n"
+        "- Left click on cells to add them.\n"
+        "- Right click on cells to remove them.\n"
+        "- Drag with the left mouse button to draw cells in drawing mode.\n"
+        "- Use the right mouse button to erase cells in drawing mode.\n"
         "- Use the Start button to start the simulation.\n"
         "- Use the Stop button to stop the simulation.\n"
         "- Use the Clear button to clear the grid.\n"
@@ -179,61 +196,59 @@ def show_help():
     )
     messagebox.showinfo("Help", help_text)
 
-canvas.bind("<Button-1>", toggle_cell_state)
+canvas.bind("<Button-1>", add_cell)
 canvas.bind("<B1-Motion>", draw_cell)
+canvas.bind("<Button-3>", remove_cell)
+canvas.bind("<B3-Motion>", erase_cell)
 
-render_grid()
+# Create menu
+menu_bar = tk.Menu(root)
+root.config(menu=menu_bar)
 
-button_frame = tk.Frame(root)
-button_frame.pack()
+file_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="Save", command=save_board)
+file_menu.add_command(label="Load", command=load_board)
+file_menu.add_separator()
+file_menu.add_command(label="Exit", command=root.quit)
 
-start_button = tk.Button(button_frame, text="Start", command=start_game)
-start_button.grid(row=0, column=0)
+pattern_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Patterns", menu=pattern_menu)
+pattern_menu.add_command(label="Glider", command=load_glider)
+pattern_menu.add_command(label="Small Exploder", command=load_small_exploder)
+pattern_menu.add_command(label="Ten Cell Row", command=load_ten_cell_row)
+pattern_menu.add_command(label="Lightweight Spaceship", command=load_lw_spaceship)
+pattern_menu.add_command(label="Tumbler", command=load_tumbler)
+pattern_menu.add_command(label="Gosper Glider Gun", command=load_gosper_glider_gun)
 
-stop_button = tk.Button(button_frame, text="Stop", command=stop_game)
-stop_button.grid(row=0, column=1)
+help_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Help", menu=help_menu)
+help_menu.add_command(label="Instructions", command=show_help)
 
-clear_button = tk.Button(button_frame, text="Clear", command=clear_board)
-clear_button.grid(row=0, column=2)
+# Control buttons
+controls_frame = tk.Frame(root, bg="black")
+controls_frame.pack()
 
-save_button = tk.Button(button_frame, text="Save", command=save_board)
-save_button.grid(row=0, column=3)
+start_button = tk.Button(controls_frame, text="Start", command=start_game, bg="black", fg="red")
+start_button.grid(row=0, column=0, padx=5, pady=10)
 
-load_button = tk.Button(button_frame, text="Load", command=load_board)
-load_button.grid(row=0, column=4)
+stop_button = tk.Button(controls_frame, text="Stop", command=stop_game, bg="black", fg="red")
+stop_button.grid(row=0, column=1, padx=5, pady=10)
 
-random_button = tk.Button(button_frame, text="Randomize", command=randomize_board)
-random_button.grid(row=0, column=5)
+clear_button = tk.Button(controls_frame, text="Clear", command=clear_board, bg="black", fg="red")
+clear_button.grid(row=0, column=2, padx=5, pady=10)
 
-glider_button = tk.Button(button_frame, text="Glider", command=load_glider)
-glider_button.grid(row=0, column=6)
+draw_button = tk.Button(controls_frame, text="Drawing Mode: OFF", command=toggle_drawing_mode, bg="black", fg="red")
+draw_button.grid(row=0, column=3, padx=5, pady=10)
 
-small_exploder_button = tk.Button(button_frame, text="Small Exploder", command=load_small_exploder)
-small_exploder_button.grid(row=0, column=7)
-
-ten_cell_row_button = tk.Button(button_frame, text="10 Cell Row", command=load_ten_cell_row)
-ten_cell_row_button.grid(row=0, column=8)
-
-lw_spaceship_button = tk.Button(button_frame, text="Lightweight Spaceship", command=load_lw_spaceship)
-lw_spaceship_button.grid(row=0, column=9)
-
-tumbler_button = tk.Button(button_frame, text="Tumbler", command=load_tumbler)
-tumbler_button.grid(row=0, column=10)
-
-gosper_gun_button = tk.Button(button_frame, text="Gosper Glider Gun", command=load_gosper_glider_gun)
-gosper_gun_button.grid(row=0, column=11)
-
-draw_button = tk.Button(button_frame, text="Drawing Mode: OFF", command=toggle_drawing_mode)
-draw_button.grid(row=1, column=0, columnspan=6)
-
-help_button = tk.Button(button_frame, text="Help", command=show_help)
-help_button.grid(row=1, column=7)
-
-status_label = tk.Label(root, text="Stopped", bd=1, relief=tk.SUNKEN, anchor=tk.W)
-status_label.pack(side=tk.BOTTOM, fill=tk.X)
-
-speed_scale = tk.Scale(root, from_=10, to=1000, orient=tk.HORIZONTAL, label="Speed (ms)", command=set_simulation_speed)
-speed_scale.pack()
+speed_scale = tk.Scale(controls_frame, from_=1, to=200, orient=tk.HORIZONTAL, label="Speed", bg="black", fg="red", command=set_simulation_speed)
 speed_scale.set(speed)
+speed_scale.grid(row=0, column=4, padx=5, pady=10)
+
+status_label = tk.Label(controls_frame, text="Stopped", bg="black", fg="red")
+status_label.grid(row=0, column=5, padx=5, pady=10)
+
+randomize_button = tk.Button(controls_frame, text="Randomize", command=randomize_board, bg="black", fg="red")
+randomize_button.grid(row=0, column=6, padx=5, pady=10)
 
 root.mainloop()
