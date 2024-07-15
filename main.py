@@ -7,10 +7,16 @@ GRID_WIDTH = 50
 GRID_HEIGHT = 30
 CELL_SIZE = 15
 
+	
+live_cell_color = "red"
+dead_cell_color = "black"
+grid_line_color = "gray"
+background_color = "black"
+
 root = tk.Tk()
 root.title("Conway's Game of Life")
 
-root.configure(bg="black")
+root.configure(bg=background_color)
 
 canvas = tk.Canvas(root, width=GRID_WIDTH * CELL_SIZE, height=GRID_HEIGHT * CELL_SIZE, borderwidth=0, highlightthickness=0, bg="black")
 canvas.pack(pady=20)
@@ -29,10 +35,10 @@ def render_grid():
     canvas.delete("all")
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            cell_color = "red" if board[y][x] else "black"
+            cell_color = live_cell_color if board[y][x] else dead_cell_color
             canvas.create_rectangle(x * CELL_SIZE, y * CELL_SIZE,
                                     (x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE,
-                                    fill=cell_color, outline="gray")
+                                    fill=cell_color, outline=grid_line_color)
 
 def count_live_neighbors(y, x):
     count = 0
@@ -111,6 +117,15 @@ def stop_game():
     running = False
     stats_label.config(text="Stopped", fg="red")
 
+def step_game():
+    global running
+    running = False
+    stats_label.config(text="Paused", fg="red")
+    update_simulation()
+def reset_speed():
+    global speed
+    speed = 100
+    speed_scale.set(speed)
 
 def clear_board():
     global board, next_board, generation_count, live_cells_count
@@ -211,6 +226,22 @@ def show_help():
         "- Toggle drawing mode with the Drawing Mode button."
     )
     messagebox.showinfo("Help", help_text)
+
+def choose_color(color_type):
+    color = colorchooser.askcolor()[1]
+    if color:
+        global live_cell_color, dead_cell_color, grid_line_color, background_color
+        if color_type == "Live Cell":
+            live_cell_color = color
+        elif color_type == "Dead Cell":
+            dead_cell_color = color
+        elif color_type == "Grid Line":
+            grid_line_color = color
+        elif color_type == "Background":
+            background_color = color
+            root.configure(bg=background_color)
+            canvas.configure(bg=background_color)
+        render_grid()
 
 canvas.bind("<Button-1>", add_cell)
 canvas.bind("<B1-Motion>", draw_cell)
