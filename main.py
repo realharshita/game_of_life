@@ -243,6 +243,37 @@ def choose_color(color_type):
             canvas.configure(bg=background_color)
         render_grid()
 
+def create_pattern_preview(pattern):
+    preview_window = tk.Toplevel(root)
+    preview_window.title("Pattern Preview")
+    preview_canvas = tk.Canvas(preview_window, width=100, height=100, bg=background_color)
+    preview_canvas.pack()
+    for (x, y) in pattern:
+        preview_canvas.create_rectangle(x * 10, y * 10, (x + 1) * 10, (y + 1) * 10, fill=live_cell_color, outline=grid_line_color)
+def preview_glider():
+    glider = [(1, 0), (2, 1), (0, 2), (1, 2), (2, 2)]
+    create_pattern_preview(glider)
+def preview_small_exploder():
+    small_exploder = [(1, 0), (0, 1), (1, 1), (2, 1), (0, 2), (2, 2), (1, 3)]
+    create_pattern_preview(small_exploder)
+def preview_ten_cell_row():
+    ten_cell_row = [(x, 1) for x in range(10)]
+    create_pattern_preview(ten_cell_row)
+def preview_lw_spaceship():
+    lw_spaceship = [(1, 0), (2, 0), (3, 0), (4, 0), (0, 1), (4, 1), (4, 2), (0, 3), (3, 3)]
+    create_pattern_preview(lw_spaceship)
+def preview_tumbler():
+    tumbler = [(3, 0), (4, 0), (5, 0), (6, 0), (2, 1), (3, 1), (5, 1), (6, 1), (2, 2), (3, 2), (5, 2), (6, 2),
+               (0, 3), (2, 3), (6, 3), (8, 3), (0, 4), (1, 4), (7, 4), (8, 4), (0, 5), (8, 5), (1, 6), (7, 6),
+               (2, 6), (6, 6), (3, 6), (4, 6), (5, 6)]
+    create_pattern_preview(tumbler)
+def preview_gosper_glider_gun():
+    gosper_glider_gun = [(24, 2), (22, 3), (24, 3), (12, 4), (13, 4), (20, 4), (21, 4), (34, 4), (35, 4),
+                         (11, 5), (15, 5), (20, 5), (21, 5), (34, 5), (35, 5), (0, 6), (1, 6), (10, 6), (16, 6),
+                         (20, 6), (21, 6), (0, 7), (1, 7), (10, 7), (14, 7), (16, 7), (17, 7), (22, 7), (24, 7),
+                         (10, 8), (16, 8), (24, 8), (11, 9), (15, 9), (12, 10), (13, 10)]
+    create_pattern_preview(gosper_glider_gun)
+
 canvas.bind("<Button-1>", add_cell)
 canvas.bind("<B1-Motion>", draw_cell)
 canvas.bind("<Button-3>", remove_cell)
@@ -268,12 +299,27 @@ pattern_menu.add_command(label="Lightweight Spaceship", command=load_lw_spaceshi
 pattern_menu.add_command(label="Tumbler", command=load_tumbler)
 pattern_menu.add_command(label="Gosper Glider Gun", command=load_gosper_glider_gun)
 
+preview_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Previews", menu=preview_menu)
+preview_menu.add_command(label="Glider", command=preview_glider)
+preview_menu.add_command(label="Small Exploder", command=preview_small_exploder)
+preview_menu.add_command(label="Ten Cell Row", command=preview_ten_cell_row)
+preview_menu.add_command(label="Lightweight Spaceship", command=preview_lw_spaceship)
+preview_menu.add_command(label="Tumbler", command=preview_tumbler)
+preview_menu.add_command(label="Gosper Glider Gun", command=preview_gosper_glider_gun)
+color_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Colors", menu=color_menu)
+color_menu.add_command(label="Live Cell Color", command=lambda: choose_color("Live Cell"))
+color_menu.add_command(label="Dead Cell Color", command=lambda: choose_color("Dead Cell"))
+color_menu.add_command(label="Grid Line Color", command=lambda: choose_color("Grid Line"))
+color_menu.add_command(label="Background Color", command=lambda: choose_color("Background"))
+
 help_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="Help", menu=help_menu)
 help_menu.add_command(label="Instructions", command=show_help)
 
 # Control buttons
-controls_frame = tk.Frame(root, bg="black")
+controls_frame = tk.Frame(root, bg=background_color)
 controls_frame.pack()
 
 start_button = tk.Button(controls_frame, text="Start Simulation", command=start_game, bg="black", fg="red", padx=10, pady=5)
