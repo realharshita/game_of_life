@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, colorchooser
 import json
 import random
 
@@ -7,7 +7,6 @@ GRID_WIDTH = 50
 GRID_HEIGHT = 30
 CELL_SIZE = 15
 
-	
 live_cell_color = "red"
 dead_cell_color = "black"
 grid_line_color = "gray"
@@ -15,10 +14,9 @@ background_color = "black"
 
 root = tk.Tk()
 root.title("Conway's Game of Life")
-
 root.configure(bg=background_color)
 
-canvas = tk.Canvas(root, width=GRID_WIDTH * CELL_SIZE, height=GRID_HEIGHT * CELL_SIZE, borderwidth=0, highlightthickness=0, bg="black")
+canvas = tk.Canvas(root, width=GRID_WIDTH * CELL_SIZE, height=GRID_HEIGHT * CELL_SIZE, borderwidth=0, highlightthickness=0, bg=background_color)
 canvas.pack(pady=20)
 
 board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
@@ -75,8 +73,10 @@ def update_simulation():
                 board[y][x] = next_board[y][x]
 
         render_grid()
-        root.after(speed, update_simulation)
         update_statistics()
+
+        if running:
+            root.after(speed, update_simulation)
 
 def update_statistics():
     stats_label.config(text=f"Generation: {generation_count} | Live Cells: {live_cells_count}")
@@ -106,6 +106,7 @@ def erase_cell(event):
         y = event.y // CELL_SIZE
         board[y][x] = 0
         render_grid()
+
 def start_game():
     global running
     running = True
@@ -116,12 +117,16 @@ def stop_game():
     global running
     running = False
     stats_label.config(text="Stopped", fg="red")
-
+    
 def step_game():
     global running
-    running = False
-    stats_label.config(text="Paused", fg="red")
-    update_simulation()
+    if not running:
+        running = True
+        stats_label.config(text="Stepping", fg="red")
+        update_simulation()
+        running = False 
+
+
 def reset_speed():
     global speed
     speed = 100
@@ -248,29 +253,36 @@ def create_pattern_preview(pattern):
     preview_window.title("Pattern Preview")
     preview_canvas = tk.Canvas(preview_window, width=100, height=100, bg=background_color)
     preview_canvas.pack()
+
     for (x, y) in pattern:
         preview_canvas.create_rectangle(x * 10, y * 10, (x + 1) * 10, (y + 1) * 10, fill=live_cell_color, outline=grid_line_color)
+
 def preview_glider():
     glider = [(1, 0), (2, 1), (0, 2), (1, 2), (2, 2)]
     create_pattern_preview(glider)
+
 def preview_small_exploder():
     small_exploder = [(1, 0), (0, 1), (1, 1), (2, 1), (0, 2), (2, 2), (1, 3)]
     create_pattern_preview(small_exploder)
+
 def preview_ten_cell_row():
     ten_cell_row = [(x, 1) for x in range(10)]
     create_pattern_preview(ten_cell_row)
+
 def preview_lw_spaceship():
     lw_spaceship = [(1, 0), (2, 0), (3, 0), (4, 0), (0, 1), (4, 1), (4, 2), (0, 3), (3, 3)]
     create_pattern_preview(lw_spaceship)
+
 def preview_tumbler():
-    tumbler = [(3, 0), (4, 0), (5, 0), (6, 0), (2, 1), (3, 1), (5, 1), (6, 1), (2, 2), (3, 2), (5, 2), (6, 2),
-               (0, 3), (2, 3), (6, 3), (8, 3), (0, 4), (1, 4), (7, 4), (8, 4), (0, 5), (8, 5), (1, 6), (7, 6),
+    tumbler = [(3, 0), (4, 0), (5, 0), (6, 0), (2, 1), (3, 1), (5, 1), (6, 1), (2, 2), (3, 2), (5, 2), (6, 2), 
+               (0, 3), (2, 3), (6, 3), (8, 3), (0, 4), (1, 4), (7, 4), (8, 4), (0, 5), (8, 5), (1, 6), (7, 6), 
                (2, 6), (6, 6), (3, 6), (4, 6), (5, 6)]
     create_pattern_preview(tumbler)
+
 def preview_gosper_glider_gun():
-    gosper_glider_gun = [(24, 2), (22, 3), (24, 3), (12, 4), (13, 4), (20, 4), (21, 4), (34, 4), (35, 4),
-                         (11, 5), (15, 5), (20, 5), (21, 5), (34, 5), (35, 5), (0, 6), (1, 6), (10, 6), (16, 6),
-                         (20, 6), (21, 6), (0, 7), (1, 7), (10, 7), (14, 7), (16, 7), (17, 7), (22, 7), (24, 7),
+    gosper_glider_gun = [(24, 2), (22, 3), (24, 3), (12, 4), (13, 4), (20, 4), (21, 4), (34, 4), (35, 4), 
+                         (11, 5), (15, 5), (20, 5), (21, 5), (34, 5), (35, 5), (0, 6), (1, 6), (10, 6), (16, 6), 
+                         (20, 6), (21, 6), (0, 7), (1, 7), (10, 7), (14, 7), (16, 7), (17, 7), (22, 7), (24, 7), 
                          (10, 8), (16, 8), (24, 8), (11, 9), (15, 9), (12, 10), (13, 10)]
     create_pattern_preview(gosper_glider_gun)
 
@@ -278,6 +290,11 @@ canvas.bind("<Button-1>", add_cell)
 canvas.bind("<B1-Motion>", draw_cell)
 canvas.bind("<Button-3>", remove_cell)
 canvas.bind("<B3-Motion>", erase_cell)
+
+root.bind("<space>", start_game)
+root.bind("<Escape>", stop_game)
+root.bind("c", clear_board)
+root.bind("r", randomize_board)
 
 # Create menu
 menu_bar = tk.Menu(root)
@@ -307,6 +324,7 @@ preview_menu.add_command(label="Ten Cell Row", command=preview_ten_cell_row)
 preview_menu.add_command(label="Lightweight Spaceship", command=preview_lw_spaceship)
 preview_menu.add_command(label="Tumbler", command=preview_tumbler)
 preview_menu.add_command(label="Gosper Glider Gun", command=preview_gosper_glider_gun)
+
 color_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="Colors", menu=color_menu)
 color_menu.add_command(label="Live Cell Color", command=lambda: choose_color("Live Cell"))
@@ -330,30 +348,33 @@ stop_button = tk.Button(controls_frame, text="Stop Simulation", command=stop_gam
 stop_button.grid(row=0, column=1, padx=5, pady=10)
 stop_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
+step_button = tk.Button(controls_frame, text="Step", command=step_game, bg="black", fg="red", padx=10, pady=5)
+step_button.grid(row=0, column=2, padx=5, pady=10)
+step_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
+
+reset_speed_button = tk.Button(controls_frame, text="Reset Speed", command=reset_speed, bg="black", fg="red", padx=10, pady=5)
+reset_speed_button.grid(row=0, column=3, padx=5, pady=10)
+reset_speed_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
+
 clear_button = tk.Button(controls_frame, text="Clear Grid", command=clear_board, bg="black", fg="red", padx=10, pady=5)
-clear_button.grid(row=0, column=2, padx=5, pady=10)
+clear_button.grid(row=0, column=4, padx=5, pady=10)
 clear_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
+random_button = tk.Button(controls_frame, text="Randomize Grid", command=randomize_board, bg="black", fg="red", padx=10, pady=5)
+random_button.grid(row=0, column=5, padx=5, pady=10)
+random_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
+
 draw_button = tk.Button(controls_frame, text="Drawing Mode: OFF", command=toggle_drawing_mode, bg="black", fg="red", padx=10, pady=5)
-draw_button.grid(row=0, column=3, padx=5, pady=10)
+draw_button.grid(row=0, column=6, padx=5, pady=10)
 draw_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
 
-speed_scale = tk.Scale(controls_frame, from_=1, to=200, orient=tk.HORIZONTAL, label="Simulation Speed", bg="black", fg="red", command=set_simulation_speed)
+# Simulation speed control
+speed_scale = tk.Scale(root, from_=10, to=1000, orient=tk.HORIZONTAL, label="Simulation Speed (ms)", command=set_simulation_speed, bg="black", fg="red", troughcolor="gray", highlightbackground="red")
 speed_scale.set(speed)
-speed_scale.grid(row=0, column=4, padx=5, pady=10)
-speed_scale.config(troughcolor="gray")
+speed_scale.pack(pady=20)
 
-randomize_button = tk.Button(controls_frame, text="Randomize Grid", command=randomize_board, bg="black", fg="red", padx=10, pady=5)
-randomize_button.grid(row=0, column=6, padx=5, pady=10)
-randomize_button.config(cursor="hand2", relief=tk.RAISED, bd=2, highlightbackground="red")
-
-status_bar = tk.Label(root, text="Welcome to Conway's Game of Life!", bd=1, relief=tk.SUNKEN, anchor=tk.W)
-status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-
-def update_status_bar(message):
-    status_bar.config(text=message)
-
-stats_label = tk.Label(controls_frame, text="Generation: 0 | Live Cells: 0", bg="black", fg="red")
-stats_label.grid(row=0, column=7, padx=5, pady=10)
+# Statistics display
+stats_label = tk.Label(root, text="Generation: 0 | Live Cells: 0", fg="red", bg="black")
+stats_label.pack(pady=10)
 
 root.mainloop()
